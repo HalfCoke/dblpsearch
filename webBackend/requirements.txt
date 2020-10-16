@@ -1,0 +1,9 @@
+Flask_RESTful==0.3.8
+requests==2.24.0
+Flask==1.1.2
+elasticsearch_dsl==7.3.0
+pytz==2020.1
+APScheduler==3.6.3
+Flask_Cors==3.0.9
+elasticsearch==7.9.1
+pdfplumber==0.5.23
