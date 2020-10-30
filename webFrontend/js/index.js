@@ -50,7 +50,7 @@ total_vue = new Vue({
 
 
 function _get_res(params) {
-  axios.post('http://10.212.31.161/api/v1/search',
+  axios.post('http://www.halfcoke.cn/api/v1/search',
       params,
       {
         header: {'Content-Type': 'application/json'}

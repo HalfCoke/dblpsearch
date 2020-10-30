@@ -2,81 +2,87 @@
 <meta http-equiv="Access-Control-Allow-Origin" content="*"/>
 <html lang="zh">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>DBLP 论文检索工具</title>
-  <link rel="icon" type="image/png" sizes="192x192" href="https://dblp.org/img/dblp.icon.192x192.png">
-  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>DBLP 论文检索工具</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="https://dblp.org/img/dblp.icon.192x192.png">
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
 <div class="search_and_res">
-  <div class="input_and_search">
-    <div class="title">
-      <div>
-        <span>DBLP 论文检索工具</span>
-      </div>
-    </div>
-    <div class="input_option">
-      <div class="choose_cata">
-        <div class="choose_title">会议/期刊类别：</div>
-        <ul>
-          <li>
-            <input type="checkbox" value="A" v-model="cata">
-            <span>A</span>
-          </li>
-          <li>
-            <input type="checkbox" value="B" v-model="cata">
-            <span>B</span>
-          </li>
-          <li>
-            <input type="checkbox" value="C" v-model="cata">
-            <span>C</span>
-          </li>
-        </ul>
-      </div>
-      <div class="year">
-        <div class="year_title">起始/终止年份：</div>
-        <select name="type" id="yf" class="form-control" v-model="yf">
-          <option>--Select start year--</option>
-          <option v-for="y in year">{{ y }}</option>
-        </select>
-        <select name="type" id="yt" class="form-control" v-model="yt">
-          <option>--Select end year--</option>
-          <option v-for="y in year">{{ y }}</option>
-        </select>
-      </div>
-      <div class="show_res_button_wrap">
-        <div class="show_res_button" @click="show_res">
-          <div></div>
+    <div class="input_and_search">
+        <div class="title">
+            <div>
+                <span>DBLP 论文检索工具</span>
+            </div>
         </div>
-      </div>
+        <div class="input_option">
+            <div class="choose_cata">
+                <div class="choose_title">会议/期刊类别：</div>
+                <ul>
+                    <li>
+                        <input type="checkbox" value="A" v-model="cata">
+                        <span>A</span>
+                    </li>
+                    <li>
+                        <input type="checkbox" value="B" v-model="cata">
+                        <span>B</span>
+                    </li>
+                    <li>
+                        <input type="checkbox" value="C" v-model="cata">
+                        <span>C</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="year">
+                <div class="year_title">起始/终止年份：</div>
+                <select name="type" id="yf" class="form-control" v-model="yf">
+                    <option>--Select start year--</option>
+                    <option v-for="y in year">{{ y }}</option>
+                </select>
+                <select name="type" id="yt" class="form-control" v-model="yt">
+                    <option>--Select end year--</option>
+                    <option v-for="y in year">{{ y }}</option>
+                </select>
+            </div>
+            <div class="show_res_button_wrap">
+                <div class="show_res_button" @click="show_res">
+                    <div></div>
+                </div>
+            </div>
+        </div>
+        <div class="input_wrap">
+            <input type="text" class="input_text" @keyup.enter="get_res" v-model="keys" placeholder="Search...">
+            <div class="search"></div>
+        </div>
     </div>
-    <div class="input_wrap">
-      <input type="text" class="input_text" @keyup.enter="get_res" v-model="keys" placeholder="Search...">
-      <div class="search"></div>
-    </div>
-  </div>
 </div>
 
 <div class="pop_up" :class="activePopUp === 1? 'pop_up_show':''" @click="close_popUp">
-  <div class="box">
-    <div class="paper_list" @click.stop>
-      <ul class="accordion">
-        <li v-if="res_cata_data.res_len === -1">无结果</li>
-        <li v-else v-for="(value, name,index) in res_cata_data.paper_titles" v-bind:key="name">
-          <a class="toggle" @click.stop="item_click(index)">{{name}}</a>
-          <div class="inner_wrap">
-            <ul :class="activeClass === index ? 'show' : ''" class="inner">
-              <li v-for="paper in value" v-bind:key="paper"><span v-html="paper"></span></li>
+    <div class="box">
+        <div class="paper_list" @click.stop>
+            <ul class="accordion">
+                <li v-if="res_cata_data.res_len === -1">无结果</li>
+                <li v-else v-for="(value, name,index) in res_cata_data.paper_titles" v-bind:key="name">
+                    <a class="toggle" @click.stop="item_click(index)">{{name}}</a>
+                    <div class="inner_wrap">
+                        <ul :class="activeClass === index ? 'show' : ''" class="inner">
+                            <li v-for="paper in value" v-bind:key="paper"><span v-html="paper"></span></li>
+                        </ul>
+                    </div>
+                </li>
             </ul>
-          </div>
-        </li>
-      </ul>
+        </div>
     </div>
-  </div>
 </div>
 <div class="beian">
-  <div><a href="http://beian.miit.gov.cn">京ICP备2020039820号-1</a></div>
+    <div>
+        <a target="_blank" href="http://beian.miit.gov.cn">京ICP备2020039820号-1</a>
+        <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802033291">
+            <img src="备案图标.png"/>
+            京公网安备 11010802033291号
+        </a>
+    </div>
 </div>
 </body>
 <link rel=" stylesheet" type="text/css" href="styles/index.css"/>
