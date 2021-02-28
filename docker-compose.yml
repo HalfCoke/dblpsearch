@@ -1,0 +1,97 @@
+version: '3.9'
+services:
+  es:
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/elasticsearch:7.11.1
+    container_name: es
+    environment:
+      - node.name=es
+      - cluster.name=es-docker-cluster
+      - cluster.initial_master_nodes=es
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+      - type: volume
+        source: es_conf
+        target: /etc/elasticsearch
+    ports:
+      - 9200:9200
+    networks:
+      - dblpweb
+  webserver:
+    image: nginx:1.19.7-alpine
+    container_name: webserver
+    volumes:
+      - type: volume
+        source: nginx_conf
+        target: /etc/nginx
+      - type: volume
+        source: nginx_log
+        target: /var/log/nginx
+      - type: volume
+        source: html
+        target: /usr/share/nginx/html
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - dblpweb
+#  kibana:
+#    image: docker.elastic.co/kibana/kibana:7.11.1
+#    container_name: kibana
+#    environment:
+#      SERVER_NAME: kibana
+#      ELASTICSEARCH_HOSTS: "http://es:9200"
+#      I18N_LOCALE: "zh-CN"
+#    depends_on:
+#      - "es"
+#    ports:
+#      - 5601:5601
+#    networks:
+#      - dblpweb
+
+  dblp-web-backend:
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:1.0
+    container_name: dblpbackend
+    depends_on:
+      - "es"
+      - "webserver"
+    ports:
+      - 5050:5050
+      - 5051:5051
+    networks:
+      - dblpweb
+volumes:
+  nginx_conf:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/nginx/conf'
+  nginx_log:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/nginx/log'
+  html:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/dblpweb/searchwebui/dist'
+  es_data:
+    driver: local
+  es_conf:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/elasticsearch/conf'
+networks:
+  dblpweb:
+    driver: bridge

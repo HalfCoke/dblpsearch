@@ -14,9 +14,17 @@ def check_key(keys):
 
 
 def construct_res_dict(paper_search_res):
-    paper_res_dict = {}
+    # paper_res_dict = {}
+    paper_list = []
     for res in paper_search_res:
-        category = res.category
-        paper_list = paper_res_dict.setdefault(category, [])
-        paper_list.append(res.meta.highlight.title[0] + " " + str(res.year) + " " + res.abbreviation)
-    return paper_res_dict
+        # paper_list = paper_res_dict.setdefault(category, [])
+        single_paper = {
+            "title": res.meta.highlight.title[0],
+            "year": res.year,
+            "authors": list(res.authors),
+            "url": res.ee_url,
+            "category": res.category,
+            "abbreviation": res.abbreviation
+        }
+        paper_list.append(single_paper)
+    return paper_list

@@ -12,7 +12,7 @@ PAPER_TAG = ['article', 'inproceedings']
 PAPER_CATALOGUE = HOME_PATH + '/resources/upload/中国计算机学会推荐国际学术会议和期刊目录-2019.pdf'
 
 # elasticsearch地址
-ELASTICSEARCH_HOST = ["localhost:19200"]
+ELASTICSEARCH_HOST = ["es:9200"]
 ELASTICSEARCH_INDEX = "dblp_cata_paper_elastic"
 # 并发写入elasticsearch的线程数量
 MAX_THREAD_SIZE = 30

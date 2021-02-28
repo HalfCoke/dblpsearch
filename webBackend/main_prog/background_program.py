@@ -1,4 +1,5 @@
 import logging
+import time
 
 import pytz
 import requests
@@ -38,6 +39,11 @@ def _export_DBLP_paper():
     paper_category_link_dict = {}
     papers = parse_xml(xml_file, paper_category_link_dict)
     save_doc_to_elastic(is_first_run, papers, paper_category_link_dict, es_client)
+
+
+def init_DBLP_paper(val):
+    time.sleep(val)
+    _export_DBLP_paper()
 
 
 if __name__ == '__main__':

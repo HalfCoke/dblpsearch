@@ -1,12 +1,12 @@
 import datetime
 import logging
-
+import _thread
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_restful import Api, Resource
 
 from common import HOME_PATH
-from main_prog.background_program import background_program
+from main_prog.background_program import background_program, init_DBLP_paper
 from main_prog.utils_function import get_search_res
 from web_func.func import check_key, check_category, check_year, construct_res_dict
 
@@ -19,7 +19,10 @@ logging.basicConfig(level=logging.INFO,
 app = Flask(__name__)
 api = Api(app)
 
-cors = CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
+CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
+
+
+# CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 class SearchPaper(Resource):
@@ -44,7 +47,7 @@ class SearchPaper(Resource):
             # 获得检索结果
             paper_search_res = get_search_res(args)
             paper_res_dict = construct_res_dict(paper_search_res)
-            res = {'paper_titles': paper_res_dict}
+            res = {'papers': paper_res_dict}
             return jsonify(res)
         else:
             return 'Nothing', 404
@@ -56,7 +59,7 @@ class TestConnect(Resource):
 
 
 @app.errorhandler(404)
-def miss():
+def miss(val):
     return 'Nothing', 404
 
 
@@ -67,7 +70,9 @@ api.add_resource(TestConnect, '/')
 logging.info("当前运行路径: " + HOME_PATH)
 logging.info("主程序开始执行...")
 background_program.start()
+_thread.start_new_thread(init_DBLP_paper, (30,))
 if __name__ == '__main__':
     app.run(
-        port=5050
+        host="0.0.0.0",
+        port=5052
     )
