@@ -64,7 +64,7 @@ export default {
   },
   methods: {
     showNothing () {
-      return (this.showRes.length===0&&store.state.display_papers.length===0)
+      return (this.showRes.length === 0 && store.state.display_papers.length === 0)
     },
     genPaperKey (paper) {
       return paper.title + paper.url
@@ -103,11 +103,14 @@ export default {
           },
           data
         }).then(res => {
-          console.log(res);
+          // console.log(res);
           store.commit("add_papers", res.data.papers)
           store.commit("mutate_display_papers", res.data.papers)
           this.data_loading = false
           this.showRes = ""
+        }).catch(res => {
+          this.data_loading = false
+          this.$message.error("请求超时")
         })
       }, 100)
     }

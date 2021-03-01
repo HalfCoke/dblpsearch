@@ -17,7 +17,7 @@ services:
       - es_data:/usr/share/elasticsearch/data
       - type: volume
         source: es_conf
-        target: /etc/elasticsearch
+        target: /usr/share/elasticsearch/config
     ports:
       - 9200:9200
     networks:
@@ -40,19 +40,6 @@ services:
       - 443:443
     networks:
       - dblpweb
-#  kibana:
-#    image: docker.elastic.co/kibana/kibana:7.11.1
-#    container_name: kibana
-#    environment:
-#      SERVER_NAME: kibana
-#      ELASTICSEARCH_HOSTS: "http://es:9200"
-#      I18N_LOCALE: "zh-CN"
-#    depends_on:
-#      - "es"
-#    ports:
-#      - 5601:5601
-#    networks:
-#      - dblpweb
 
   dblp-web-backend:
     image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:1.0
