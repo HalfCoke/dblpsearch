@@ -21,8 +21,8 @@ def construct_res_dict(paper_search_res):
         single_paper = {
             "title": res.meta.highlight.title[0],
             "year": res.year,
-            "authors": list(res.authors),
-            "url": res.ee_url,
+            "authors": list(res.authors) if hasattr(res, 'authors') else ['NULL'],
+            "url": res.ee_url if hasattr(res,'ee_url') else '#',
             "category": res.category,
             "abbreviation": res.abbreviation
         }

@@ -25,6 +25,9 @@ services:
   webserver:
     image: nginx:1.19.7-alpine
     container_name: webserver
+    depends_on:
+      - "es"
+      - "dblp-web-backend"
     volumes:
       - type: volume
         source: nginx_conf
@@ -42,11 +45,10 @@ services:
       - dblpweb
 
   dblp-web-backend:
-    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:1.0
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:1.1
     container_name: dblpbackend
     depends_on:
       - "es"
-      - "webserver"
     ports:
       - 5050:5050
       - 5051:5051
