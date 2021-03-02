@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO,
 app = Flask(__name__)
 api = Api(app)
 search_word_redis = RedisOP(MOST_SEARCH_WORD)
-CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
+# CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 
 
 class SearchPaper(Resource):
@@ -53,7 +53,7 @@ class SearchPaper(Resource):
 
 
 class GetSearchWord(Resource):
-    def get(self):
+    def post(self):
         top_k = 100
         recent_k = 10
         data = request.get_json()
