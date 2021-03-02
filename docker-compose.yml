@@ -22,19 +22,55 @@ services:
       - 9200:9200
     networks:
       - dblpweb
+
+  dblp_data_process:
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-data-process:1.0.0
+    container_name: dblp_data_process
+    command:
+      - "python"
+      - "main.py"
+    depends_on:
+      - "es"
+    volumes:
+      - type: volume
+        source: dblpweblog
+        target: /var/log
+      - type: volume
+        source: dblpwebconf
+        target: /opt/dblpDataProcess/conf
+      - type: volume
+        source: dblpdata
+        target: /opt/dblpDataProcess/resources
+    networks:
+      - dblpweb
+
+  dblp_web_backend:
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.0.0
+    container_name: dblp_web_backend
+    depends_on:
+      - "es"
+    ports:
+      - 5051:5051
+    volumes:
+      - type: volume
+        source: dblpweblog
+        target: /var/log
+      - type: volume
+        source: dblpwebconf
+        target: /opt/dblpWebBackend/conf
+    networks:
+      - dblpweb
+
   webserver:
     image: nginx:1.19.7-alpine
     container_name: webserver
     depends_on:
       - "es"
-      - "dblp-web-backend"
+      - "dblp_web_backend"
     volumes:
       - type: volume
         source: nginx_conf
         target: /etc/nginx
-      - type: volume
-        source: nginx_log
-        target: /var/log/nginx
       - type: volume
         source: html
         target: /usr/share/nginx/html
@@ -44,29 +80,31 @@ services:
     networks:
       - dblpweb
 
-  dblp-web-backend:
-    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:1.1
-    container_name: dblpbackend
-    depends_on:
-      - "es"
-    ports:
-      - 5050:5050
-      - 5051:5051
-    networks:
-      - dblpweb
 volumes:
+  dblpweblog:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/dblpweb/logs'
+  dblpwebconf:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/dblpweb/conf'
+  dblpdata:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/dblpweb/data'
   nginx_conf:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
       device: '/opt/nginx/conf'
-  nginx_log:
-    driver: local
-    driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: '/opt/nginx/log'
   html:
     driver: local
     driver_opts:
