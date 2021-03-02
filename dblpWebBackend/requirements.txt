@@ -3,3 +3,4 @@ elasticsearch_dsl==7.3.0
 Flask_RESTful==0.3.8
 elasticsearch==7.9.1
 Flask_Cors==3.0.9
+redis~=3.5.3

@@ -45,10 +45,11 @@ services:
       - dblpweb
 
   dblp_web_backend:
-    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.0.0
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.1.0
     container_name: dblp_web_backend
     depends_on:
       - "es"
+      - "search_data_storage"
     ports:
       - 5051:5051
     volumes:
@@ -77,6 +78,14 @@ services:
     ports:
       - 80:80
       - 443:443
+    networks:
+      - dblpweb
+
+  search_data_storage:
+    image: redis:6-alpine
+    container_name: search_data_storage
+    volumes:
+      - redis_data:/data
     networks:
       - dblpweb
 
@@ -112,6 +121,8 @@ volumes:
       o: 'bind'
       device: '/opt/dblpweb/searchwebui/dist'
   es_data:
+    driver: local
+  redis_data:
     driver: local
   es_conf:
     driver: local

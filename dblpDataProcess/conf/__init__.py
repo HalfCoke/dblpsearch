@@ -15,6 +15,11 @@ ELASTICSEARCH_INDEX = "dblp_cata_paper_elastic"
 # 需要elasticsearch一次性返回的最大数据条数
 ELASTICSEARCH_RES_MAX_NUM = 1500
 
+# Redis配置部分
+REDIS_HOST = "search_data_storage"
+REDIS_PORT = 6379
+MOST_SEARCH_WORD = "most_search_word"
+RECENT_WORD = "recent_search"
 #########################################################################################################
 # dblp_data_process容器配置部分
 #########################################################################################################
