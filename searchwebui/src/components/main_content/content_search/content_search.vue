@@ -4,21 +4,22 @@
       <el-col :span="20">
         <div class="input">
           <el-input
-              placeholder="请输入内容"
-              prefix-icon="el-icon-search"
-              v-model="search_input"
-              @change="handleSearch">
+                  placeholder="请输入内容"
+                  prefix-icon="el-icon-search"
+                  v-model="search_input"
+                  @change="handleSearch"
+                  @input="handleInput">
           </el-input>
         </div>
       </el-col>
       <el-col :span="4">
         <div class="search_btn">
           <el-button
-              class="button"
-              type="primary"
-              icon="el-icon-search"
-              @click="handleSearch"
-              :loading="data_loading">搜索
+                  class="button"
+                  type="primary"
+                  icon="el-icon-search"
+                  @click="handleSearch"
+                  :loading="data_loading">搜索
           </el-button>
         </div>
       </el-col>
@@ -26,10 +27,10 @@
     <el-row class="el_row" :class="showRes">
       <el-col :span="24" class="papers_list">
         <div
-            class="paper"
-            v-for="paper in $store.state.display_papers"
-            :key="genPaperKey(paper)"
-            @click="handleClickLink(paper.url)"
+                class="paper"
+                v-for="paper in $store.state.display_papers"
+                :key="genPaperKey(paper)"
+                @click="handleClickLink(paper.url)"
         >
           <span v-html="paper.title" class="paper_title"></span>
           <div class="author_list">
@@ -52,6 +53,7 @@ import store from "@/store"
 import { request } from "@/requests"
 
 let timer = null
+let input_timer = null
 export default {
   name: "content_search",
   store,
@@ -59,7 +61,8 @@ export default {
     return {
       search_input: '',
       data_loading: false,
-      showRes: 'search_res'
+      showRes: 'search_res',
+      data_input: true
     }
   },
   methods: {
@@ -79,6 +82,17 @@ export default {
     },
     handleClickLink (link) {
       window.open(link)
+    },
+    handleInput () {
+      clearTimeout(input_timer)
+      if (this.data_input) {
+        this.data_input = false
+        store.commit("add_papers", [])
+        store.commit("mutate_display_papers", [])
+      }
+      input_timer = setTimeout(() => {
+        this.data_input = true
+      }, 300)
     },
     handleSearch (val) {
       if (this.search_input === '') return
@@ -162,7 +176,7 @@ export default {
   border-bottom: #e4e4e7 1px solid;
   padding: 8px;
   border-radius: 5px;
-	cursor: pointer;
+  cursor: pointer;
 
   &:hover {
     background-color: #fafafa;
