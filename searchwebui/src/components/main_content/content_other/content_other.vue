@@ -75,7 +75,8 @@ export default {
     }
   },
   created () {
-      setInterval(this.getKeyWord,10000)
+    this.getKeyWord()
+    setInterval(this.getKeyWord,10000)
   },
   methods: {
     showContact () {

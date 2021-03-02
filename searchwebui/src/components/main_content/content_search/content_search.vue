@@ -191,6 +191,7 @@ export default {
 
 .author_list {
   display: block;
+  margin-bottom: 8px;
 }
 
 .other_info {

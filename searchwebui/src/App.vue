@@ -1,6 +1,6 @@
 <template>
 	<div id="app">
-		<el-backtop :bottom="100">
+		<el-backtop :bottom="100" :visibility-height="650">
 			<div class="back_top">
 				UP
 			</div>
