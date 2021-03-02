@@ -1,28 +1,23 @@
 import datetime
 import logging
-import _thread
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_restful import Api, Resource
 
-from common import HOME_PATH
-from main_prog.background_program import background_program, init_DBLP_paper
-from main_prog.utils_function import get_search_res
-from web_func.func import check_key, check_category, check_year, construct_res_dict
+from conf import HOME_PATH
+from utils.common_utils import check_key, check_category, check_year, construct_res_dict, get_search_res
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s : %(levelname)s  %(message)s',
                     datefmt='%Y-%m-%d %A %H:%M:%S',
                     filemode='w',
-                    filename='/var/log/dblpWebSearch.log')
+                    filename='/var/log/dblpWebBackend.log')
 
 app = Flask(__name__)
 api = Api(app)
 
 CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
-
-
-# CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 class SearchPaper(Resource):
@@ -68,9 +63,7 @@ api.add_resource(TestConnect, '/')
 # 开始执行后台任务
 # 自动下载dblp数据，并将全部ABC会议、期刊，解析成文本文件，包含期刊名、年份、所发表的机构
 logging.info("当前运行路径: " + HOME_PATH)
-logging.info("主程序开始执行...")
-background_program.start()
-_thread.start_new_thread(init_DBLP_paper, (30,))
+logging.info("后端服务开始运行...")
 if __name__ == '__main__':
     app.run(
         host="0.0.0.0",

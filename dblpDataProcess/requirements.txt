@@ -1,0 +1,6 @@
+pdfplumber==0.5.23
+requests==2.24.0
+elasticsearch_dsl==7.3.0
+elasticsearch==7.9.1
+pytz==2020.1
+APScheduler==3.6.3
