@@ -162,6 +162,7 @@ export default {
   border-bottom: #e4e4e7 1px solid;
   padding: 8px;
   border-radius: 5px;
+	cursor: pointer;
 
   &:hover {
     background-color: #fafafa;
