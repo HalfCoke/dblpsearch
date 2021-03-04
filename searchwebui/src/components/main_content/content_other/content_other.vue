@@ -15,6 +15,7 @@
               :words="most_search_word"
               :color="([, weight]) => weight > 10 ? '#1f77b4' : weight > 5 ? '#629fc9' : '#94bedb'"
               :font-size-ratio="4"
+              :spacing="4"
               font-family="Roboto"
       />
     </div>
@@ -95,7 +96,14 @@ export default {
         },
         data
       }).then((res) => {
-        this.most_search_word = res.data.most_search_word
+        this.most_search_word = []
+        for(let word of res.data.most_search_word){
+          if(word[0].length > 40){
+
+          }else{
+            this.most_search_word.push(word)
+          }
+        }
         this.recent_search_word = res.data.recent_search_word
       })
     }
