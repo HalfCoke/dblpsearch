@@ -2,7 +2,13 @@
   <div class="main-pic">
     <div class="main-text">
       <p>
-        基于DBLP数据及CCF推荐会议和期刊分类目录检索工具</p>
+        基于DBLP数据及CCF推荐会议和期刊分类目录检索工具
+      </p>
+      <div class="remark">
+        <p>
+          （当前仅支持英文检索）
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -34,9 +40,18 @@ export default {
   font-size: 48px;
   text-align: center;
   color: #FFFFFF;
-  p{
-    line-height: @height;
+
+  p {
     margin: 0 auto;
+    margin-top: @height/3;
+  }
+
+  .remark {
+    p {
+      line-height: @height/2;
+      font-size: 0.05*@height;
+      margin: 0 auto;
+    }
   }
 }
 </style>

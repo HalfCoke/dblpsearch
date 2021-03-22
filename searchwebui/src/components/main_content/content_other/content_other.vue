@@ -13,9 +13,9 @@
       <vue-word-cloud
               class="tag_cloud"
               :words="most_search_word"
-              :color="([, weight]) => weight > 10 ? '#1f77b4' : weight > 5 ? '#629fc9' : '#94bedb'"
-              :font-size-ratio="4"
-              :spacing="4"
+              :color="([, weight]) => weight > 5 ? '#1f77b4' : weight > 2 ? '#629fc9' : '#94bedb'"
+              :font-size-ratio="10"
+              :spacing="3"
               font-family="Roboto"
       />
     </div>
@@ -77,7 +77,7 @@ export default {
   },
   created () {
     this.getKeyWord()
-    setInterval(this.getKeyWord,10000)
+    setInterval(this.getKeyWord, 10000)
   },
   methods: {
     showContact () {
@@ -97,10 +97,10 @@ export default {
         data
       }).then((res) => {
         this.most_search_word = []
-        for(let word of res.data.most_search_word){
-          if(word[0].length > 40){
+        for (let word of res.data.most_search_word) {
+          if (word[0].length > 40 || word[0].indexOf("\\") !== -1) {
 
-          }else{
+          } else {
             this.most_search_word.push(word)
           }
         }

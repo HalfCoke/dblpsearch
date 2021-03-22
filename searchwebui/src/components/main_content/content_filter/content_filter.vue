@@ -66,7 +66,7 @@ export default {
       checkedCategories: ['A', 'B', 'C'],
       categories: categoryOptions,
       isIndeterminate: false,
-      value: [1930, 2021],
+      value: [2015, 2021],
       min: 1930,
       max: 2021,
       marks: {},
