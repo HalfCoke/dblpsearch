@@ -25,7 +25,8 @@
       </div>
       <div class="gongan">
         <a class="gongan_link"
-           target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802033291">
+           target="_blank"
+           href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802033291">
           <img src="https://gitee.com/halfcoke/blog_img/raw/master/img/gongAn.png" alt=""/>
           京公网安备 11010802033291 号
         </a>
@@ -53,7 +54,8 @@
         <div class="wx_public">
           公众号：微信搜索 “世颜” 或 “half_640”
           <div class="qrcode">
-            <img src="https://gitee.com/halfcoke/blog_img/raw/master/img/sin_qrcode.png" alt="qrcode">
+            <img src="https://gitee.com/halfcoke/blog_img/raw/master/img/sin_qrcode.png"
+                 alt="qrcode">
           </div>
         </div>
       </div>
@@ -97,12 +99,23 @@ export default {
         data
       }).then((res) => {
         this.most_search_word = []
+        let map = new Map()
         for (let word of res.data.most_search_word) {
           if (word[0].length > 40 || word[0].indexOf("\\") !== -1) {
-
           } else {
-            this.most_search_word.push(word)
+            for (let w of word[0].split(/\W/)) {
+              if (map.has(w)) {
+                let count = map.get(w) + word[1]
+                map.set(w, count)
+              } else {
+                map.set(w, word[1])
+              }
+            }
           }
+        }
+        console.log(map)
+        for (let [k, v] of map) {
+          this.most_search_word.push([k, v])
         }
         this.recent_search_word = res.data.recent_search_word
       })
