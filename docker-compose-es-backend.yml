@@ -1,0 +1,45 @@
+version: '3.9'
+services:
+  es:
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/elasticsearch:7.11.1
+    container_name: es
+    environment:
+      - node.name=es
+      - cluster.name=es-docker-cluster
+      - cluster.initial_master_nodes=es
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - dblpweb
+  dblp_data_process:
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-data-process:1.0.0
+    container_name: dblp_data_process
+    depends_on:
+      - "es"
+    networks:
+      - dblpweb
+
+  search_data_storage:
+    image: redis:6-alpine
+    container_name: search_data_storage
+    volumes:
+      - redis_data:/data
+    networks:
+      - dblpweb
+
+volumes:
+  es_data:
+    driver: local
+  redis_data:
+    driver: local
+networks:
+  dblpweb:
+    driver: bridge

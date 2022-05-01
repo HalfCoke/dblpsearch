@@ -27,7 +27,7 @@
         <a class="gongan_link"
            target="_blank"
            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802033291">
-          <img src="https://gitee.com/halfcoke/blog_img/raw/master/img/gongAn.png" alt=""/>
+          <img src="https://cdn.jsdelivr.net/gh/HalfCoke/blog_img@master/img/202205011157852.png" alt=""/>
           京公网安备 11010802033291 号
         </a>
       </div>
@@ -37,7 +37,7 @@
                 @click="showContact">
 			与我联系
 		  </span>
-      © 2021 HalfCoke
+      © 2022 HalfCoke
     </div>
     <el-drawer
             title="联系方式"
@@ -52,9 +52,9 @@
           博客：<a href="https://halfcoke.github.io/">https://halfcoke.github.io</a>
         </div>
         <div class="wx_public">
-          公众号：微信搜索 “世颜” 或 “half_640”
+          公众号：微信搜索 “Coder沙拉” 或 “half_640”
           <div class="qrcode">
-            <img src="https://gitee.com/halfcoke/blog_img/raw/master/img/sin_qrcode.png"
+            <img src="https://cdn.jsdelivr.net/gh/HalfCoke/blog_img@master/img/202205011147820.png"
                  alt="qrcode">
           </div>
         </div>
@@ -115,7 +115,9 @@ export default {
         }
         console.log(map)
         for (let [k, v] of map) {
-          this.most_search_word.push([k, v])
+          if (this.most_search_word.length < 15) {
+            this.most_search_word.push([k, v])
+          }
         }
         this.recent_search_word = res.data.recent_search_word
       })
