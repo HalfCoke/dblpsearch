@@ -10,19 +10,20 @@
       </div>
       <div
         v-if="keywords.length"
-        class="mt-3 flex h-40 flex-wrap content-center items-center justify-center gap-x-3 gap-y-1.5 overflow-hidden"
+        ref="cloud"
+        class="relative mt-3 h-56 overflow-hidden"
       >
         <button
-          v-for="word in keywords"
+          v-for="word in placedWords"
           :key="word.text"
           type="button"
-          class="rounded leading-none transition duration-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          class="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded leading-none transition-all duration-300 hover:z-10 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
           :style="wordStyle(word)"
           :title="`搜索 ${word.text}（${word.count} 次）`"
           @click="applyWord(word.text)"
         >{{ word.text }}</button>
       </div>
-      <div v-else class="flex h-40 items-center justify-center text-xs text-gray-400">
+      <div v-else class="flex h-56 items-center justify-center text-xs text-gray-400">
         暂无搜索数据
       </div>
     </section>
@@ -127,10 +128,13 @@ export default {
     return {
       drawer: false,
       keywords: [],
+      placedWords: [],
       maxWeight: 1,
       minWeight: 1,
       timer: null,
-      refreshTimer: null
+      refreshTimer: null,
+      resizeTimer: null,
+      measureCtx: null
     }
   },
   computed: {
@@ -157,25 +161,83 @@ export default {
     this.getKeyWord()
     this.timer = setInterval(this.getKeyWord, POLL_INTERVAL)
   },
+  mounted () {
+    window.addEventListener('resize', this.handleResize)
+  },
   beforeDestroy () {
     clearInterval(this.timer)
     clearTimeout(this.refreshTimer)
+    clearTimeout(this.resizeTimer)
+    window.removeEventListener('resize', this.handleResize)
   },
   methods: {
     scheduleRefresh () {
       clearTimeout(this.refreshTimer)
       this.refreshTimer = setTimeout(this.getKeyWord, 400)
     },
+    handleResize () {
+      clearTimeout(this.resizeTimer)
+      this.resizeTimer = setTimeout(this.layoutWords, 200)
+    },
+    // 以最高频词为中心，按频次由内向外做螺旋布局，并做碰撞检测
+    layoutWords () {
+      const box = this.$refs.cloud
+      if (!box) return
+      const width = box.clientWidth
+      const height = box.clientHeight
+      if (!width || !height) return
+      if (!this.measureCtx) {
+        this.measureCtx = document.createElement('canvas').getContext('2d')
+      }
+      const ctx = this.measureCtx
+      const placed = []
+      const cx = width / 2
+      const cy = height / 2
+      const gap = 4
+      this.keywords.forEach((word, index) => {
+        const style = this.wordStyle(word)
+        ctx.font = `${style.fontWeight} ${style.fontSize} system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif`
+        const w = ctx.measureText(word.text).width + 6
+        const h = parseFloat(style.fontSize) * 1.2
+        let spot = null
+        if (index === 0) {
+          spot = { x: cx, y: cy }
+        } else {
+          for (let step = 1; step < 700; step++) {
+            const angle = step * 2.39996322
+            const radius = 3 + step * 1.6
+            const x = cx + Math.cos(angle) * radius
+            const y = cy + Math.sin(angle) * radius * 0.66
+            if (x - w / 2 < 1 || x + w / 2 > width - 1 || y - h / 2 < 1 || y + h / 2 > height - 1) continue
+            const collides = placed.some(p =>
+              Math.abs(p.x - x) < (p.w + w) / 2 + gap && Math.abs(p.y - y) < (p.h + h) / 2 + gap
+            )
+            if (!collides) {
+              spot = { x, y }
+              break
+            }
+          }
+        }
+        if (!spot) return
+        placed.push({ ...word, x: spot.x, y: spot.y, w, h })
+      })
+      this.placedWords = placed
+    },
     wordStyle (word) {
       // 频次做 min-max 归一化，避免最大值把其他词的差异压平
       const span = this.maxWeight - this.minWeight
       const ratio = span > 0 ? (word.count - this.minWeight) / span : 1
       const size = Math.round(MIN_FONT_SIZE + (MAX_FONT_SIZE - MIN_FONT_SIZE) * Math.pow(ratio, 0.8))
-      return {
+      const style = {
         fontSize: `${size}px`,
         color: this.mixColor(ratio),
         fontWeight: Math.round(400 + 200 * ratio)
       }
+      if (word.x !== undefined) {
+        style.left = `${word.x}px`
+        style.top = `${word.y}px`
+      }
+      return style
     },
     mixColor (ratio) {
       const rgb = COLOR_LIGHT.map((start, i) => Math.round(start + (COLOR_DARK[i] - start) * ratio))
@@ -220,6 +282,8 @@ export default {
           this.maxWeight = 1
           this.minWeight = 1
         }
+        this.placedWords = []
+        this.$nextTick(this.layoutWords)
       }).catch(() => {})
     },
     applyWord (word) {
