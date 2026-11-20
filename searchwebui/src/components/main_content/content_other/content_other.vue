@@ -27,7 +27,7 @@
         <a class="gongan_link"
            target="_blank"
            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11010802033291">
-          <img src="https://cdn.jsdelivr.net/gh/HalfCoke/blog_img@master/img/202205011157852.png" alt=""/>
+          <img src="https://beian.mps.gov.cn/img/logo01.dd7ff50e.png" alt=""/>
           京公网安备 11010802033291 号
         </a>
       </div>
@@ -54,7 +54,7 @@
         <div class="wx_public">
           公众号：微信搜索 “Coder沙拉” 或 “half_640”
           <div class="qrcode">
-            <img src="https://cdn.jsdelivr.net/gh/HalfCoke/blog_img@master/img/202205011147820.png"
+            <img src="https://cdn.osyb.cn/gh/HalfCoke/blog_img@master/img/202205011147820.png"
                  alt="qrcode">
           </div>
         </div>
