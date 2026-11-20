@@ -173,7 +173,6 @@ export default {
     },
     commitCategories () {
       store.commit('mutate_categories', [...this.checkedCategories])
-      store.commit('mutate_display_papers_by_filter')
     },
     handleLeftInput (event) {
       const val = Math.min(Number(event.target.value), this.range[1])
@@ -208,9 +207,6 @@ export default {
     commitYears () {
       store.commit('mutate_from_year', this.range[0])
       store.commit('mutate_to_year', this.range[1])
-      if (store.state.papers !== null) {
-        store.commit('mutate_display_papers_by_filter')
-      }
     }
   }
 }

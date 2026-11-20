@@ -23,7 +23,7 @@ services:
       - dblpweb
 
   dblp_web_backend:
-    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.2.0
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.3.0
     container_name: dblp_web_backend
     depends_on:
       - "search_data_storage"

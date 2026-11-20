@@ -6,10 +6,11 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_restful import Api, Resource
 
-from conf import HOME_PATH, MOST_SEARCH_WORD
+from conf import HOME_PATH, MOST_SEARCH_WORD, SEARCH_DEFAULT_PAGE_SIZE
 from utils.common_utils import check_key, check_category, check_year
 from utils.search_data import RedisOP, increment_search_data
-from utils.search_engine import search_papers, construct_res_dict
+from utils.search_engine import search_papers, construct_res_dict, \
+    normalize_sort, normalize_page, normalize_page_size
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s : %(levelname)s  %(message)s',
@@ -41,12 +42,26 @@ class SearchPaper(Resource):
             yt = datetime.datetime.now().year
         # 进行参数检查
         if check_key(keys) and check_category(category) and check_year(yf, yt):
-            args = {'category': category, 'yf': yf, 'yt': yt, 'keys': keys}
+            args = {
+                'category': category,
+                'yf': yf,
+                'yt': yt,
+                'keys': keys,
+                'sort': normalize_sort(data.get('sort')),
+                'page': normalize_page(data.get('page')),
+                'page_size': normalize_page_size(data.get('page_size', SEARCH_DEFAULT_PAGE_SIZE))
+            }
             threading.Thread(target=increment_search_data, args=(keys, search_word_redis),
                              daemon=True).start()
             # 获得检索结果
-            paper_res_dict = construct_res_dict(search_papers(**args))
-            res = {'papers': paper_res_dict}
+            papers, total = search_papers(**args)
+            res = {
+                'papers': construct_res_dict(papers),
+                'total': total,
+                'page': args['page'],
+                'page_size': args['page_size'],
+                'sort': args['sort']
+            }
             return jsonify(res)
         else:
             return 'Nothing', 404

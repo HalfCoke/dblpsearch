@@ -13,7 +13,7 @@
             v-model="search_input"
             class="field pl-9 pr-9"
             type="text"
-            placeholder="搜索论文标题、作者（英文）"
+            placeholder="搜索论文标题，多个关键词用空格分隔"
             @input="handleInput"
           >
           <button
@@ -60,7 +60,7 @@
         {{ error }}
       </div>
 
-      <div v-if="data_loading">
+      <div v-if="data_loading && !hasSearched">
         <div v-for="i in 3" :key="i" class="animate-pulse border-b border-gray-100 py-3 last:border-0">
           <div class="h-4 w-3/4 rounded bg-gray-100"></div>
           <div class="mt-2 h-3 w-1/2 rounded bg-gray-100"></div>
@@ -73,39 +73,68 @@
       </div>
 
       <template v-else-if="hasSearched">
-        <div class="mb-1 flex items-center justify-between text-xs text-gray-400">
-          <span>共 {{ papers.length }} 篇结果</span>
-          <span>点击条目跳转至论文页面</span>
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xs text-gray-500">
+            共 <span class="font-semibold tabular-nums text-gray-700">{{ formattedTotal }}</span> 篇结果
+          </span>
+          <div class="flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 text-xs">
+            <button
+              v-for="option in sortOptions"
+              :key="option.value"
+              type="button"
+              class="rounded-md px-2 py-1 transition"
+              :class="sort === option.value ? 'bg-white font-medium text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+              @click="changeSort(option.value)"
+            >{{ option.label }}</button>
+          </div>
         </div>
 
-        <article
-          v-for="paper in papers"
-          :key="genPaperKey(paper)"
-          class="group cursor-pointer border-b border-gray-100 px-2 py-3 transition last:border-0 hover:bg-gray-50"
-          @click="openLink(paper.url)"
-        >
-          <span class="block text-sm font-semibold leading-relaxed text-gray-900 transition group-hover:text-blue-600"
-                v-html="paper.title"></span>
-          <div class="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-gray-500">
-            <span v-for="author in visibleAuthors(paper)" :key="author">{{ author }}</span>
-          </div>
-          <div class="mt-2 flex flex-wrap items-center gap-2">
-            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] tabular-nums text-gray-600">{{ paper.year }}</span>
-            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{{ paper.abbreviation }}</span>
-            <span class="rounded px-1.5 py-0.5 text-[11px] font-medium" :class="categoryClass(paper.category)">
-              {{ paper.category }}
-            </span>
-          </div>
-        </article>
+        <div :class="{ 'pointer-events-none opacity-50': data_loading }">
+          <article
+            v-for="paper in papers"
+            :key="genPaperKey(paper)"
+            class="group cursor-pointer border-b border-gray-100 px-2 py-3 transition last:border-0 hover:bg-gray-50"
+            @click="openLink(paper.url)"
+          >
+            <span class="block text-sm font-semibold leading-relaxed text-gray-900 transition group-hover:text-blue-600"
+                  v-html="paper.title"></span>
+            <div class="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-gray-500">
+              <span v-for="author in visibleAuthors(paper)" :key="author">{{ author }}</span>
+            </div>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+              <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] tabular-nums text-gray-600">{{ paper.year }}</span>
+              <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{{ paper.abbreviation }}</span>
+              <span class="rounded px-1.5 py-0.5 text-[11px] font-medium" :class="categoryClass(paper.category)">
+                {{ paper.category }}
+              </span>
+            </div>
+          </article>
 
-        <div v-if="papers.length === 0" class="py-12 text-center">
-          <svg class="mx-auto h-10 w-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.5" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
-          </svg>
-          <p class="mt-3 text-sm font-medium text-gray-500">没有找到相关论文</p>
-          <p class="mt-1 text-xs text-gray-400">试试更换关键词，或放宽年份与类别筛选</p>
+          <div v-if="papers.length === 0" class="py-12 text-center">
+            <svg class="mx-auto h-10 w-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
+            </svg>
+            <p class="mt-3 text-sm font-medium text-gray-500">没有找到相关论文</p>
+            <p class="mt-1 text-xs text-gray-400">多个关键词需同时命中，可减少关键词或放宽年份与类别筛选</p>
+          </div>
+
+          <div v-if="totalPages > 1" class="mt-4 flex items-center justify-center gap-3 text-xs">
+            <button
+              type="button"
+              class="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="page <= 1 || data_loading"
+              @click="goPage(page - 1)"
+            >上一页</button>
+            <span class="tabular-nums text-gray-500">{{ page }} / {{ totalPages }}</span>
+            <button
+              type="button"
+              class="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="page >= totalPages || data_loading"
+              @click="goPage(page + 1)"
+            >下一页</button>
+          </div>
         </div>
       </template>
 
@@ -116,7 +145,7 @@
                 d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
         </svg>
         <p class="mt-3 text-sm font-medium text-gray-500">输入关键词开始检索</p>
-        <p class="mt-1 text-xs text-gray-400">支持论文标题、作者等英文关键词</p>
+        <p class="mt-1 text-xs text-gray-400">默认按发表年份倒序，可切换为按相关性排序</p>
       </div>
     </div>
   </section>
@@ -126,6 +155,8 @@
 import store from '@/store'
 import { request } from '@/requests'
 
+const PAGE_SIZE = 20
+
 export default {
   name: 'content_search',
   data () {
@@ -133,13 +164,44 @@ export default {
       search_input: '',
       data_loading: false,
       hasSearched: false,
-      error: ''
+      error: '',
+      papers: [],
+      total: 0,
+      page: 1,
+      sort: 'time',
+      lastKeys: '',
+      filterTimer: null,
+      sortOptions: [
+        { value: 'time', label: '时间倒序' },
+        { value: 'relevance', label: '相关性' }
+      ]
     }
   },
   computed: {
-    papers () {
-      return store.state.display_papers || []
+    totalPages () {
+      return Math.max(1, Math.ceil(this.total / PAGE_SIZE))
+    },
+    formattedTotal () {
+      return this.total.toLocaleString('en-US')
+    },
+    filterSignature () {
+      return [
+        store.state.categories.join(''),
+        store.state.from_year,
+        store.state.to_year
+      ].join('|')
     }
+  },
+  watch: {
+    filterSignature () {
+      clearTimeout(this.filterTimer)
+      this.filterTimer = setTimeout(() => {
+        if (this.hasSearched) this.fetchPage(1)
+      }, 300)
+    }
+  },
+  beforeDestroy () {
+    clearTimeout(this.filterTimer)
   },
   methods: {
     handleInput () {
@@ -151,8 +213,10 @@ export default {
       this.search_input = ''
       this.hasSearched = false
       this.error = ''
-      store.commit('add_papers', null)
-      store.commit('mutate_display_papers', [])
+      this.lastKeys = ''
+      this.papers = []
+      this.total = 0
+      this.page = 1
     },
     genPaperKey (paper) {
       return `${paper.title}${paper.url}`
@@ -169,8 +233,22 @@ export default {
       if (link) window.open(link)
     },
     handleSearch () {
-      if (this.search_input.trim() === '') return
-
+      const keys = this.search_input.trim()
+      if (keys === '') return
+      this.lastKeys = keys
+      this.fetchPage(1)
+    },
+    changeSort (sort) {
+      if (this.sort === sort) return
+      this.sort = sort
+      if (this.hasSearched) this.fetchPage(1)
+    },
+    goPage (page) {
+      if (page < 1 || page > this.totalPages || this.data_loading) return
+      this.fetchPage(page)
+    },
+    fetchPage (page) {
+      if (!this.lastKeys) return
       this.data_loading = true
       this.error = ''
 
@@ -181,11 +259,15 @@ export default {
           yf: store.state.from_year,
           yt: store.state.to_year,
           category: store.state.categories,
-          keys: this.search_input.trim()
+          keys: this.lastKeys,
+          sort: this.sort,
+          page,
+          page_size: PAGE_SIZE
         }
       }).then(res => {
-        store.commit('add_papers', res.data.papers)
-        store.commit('mutate_display_papers', res.data.papers)
+        this.papers = res.data.papers || []
+        this.total = res.data.total || 0
+        this.page = res.data.page || page
         this.hasSearched = true
         this.data_loading = false
       }).catch(() => {

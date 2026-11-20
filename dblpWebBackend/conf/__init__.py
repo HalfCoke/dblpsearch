@@ -11,8 +11,9 @@ SQLITE_DB_PATH = os.environ.get('DBLP_DB_PATH', HOME_PATH + '/db/dblp.sqlite')
 #########################################################################################################
 # dblp_web_backend容器配置部分
 #########################################################################################################
-# 一次检索最多返回的论文条数
-SEARCH_RES_MAX_NUM = 1500
+# 检索结果分页配置
+SEARCH_DEFAULT_PAGE_SIZE = 20
+SEARCH_MAX_PAGE_SIZE = 100
 
 # Redis配置部分
 REDIS_HOST = "search_data_storage"
