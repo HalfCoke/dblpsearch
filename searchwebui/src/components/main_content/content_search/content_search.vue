@@ -190,6 +190,9 @@ export default {
         store.state.from_year,
         store.state.to_year
       ].join('|')
+    },
+    searchSeq () {
+      return store.state.search_seq
     }
   },
   watch: {
@@ -198,6 +201,14 @@ export default {
       this.filterTimer = setTimeout(() => {
         if (this.hasSearched) this.fetchPage(1)
       }, 300)
+    },
+    // 点击词云等外部入口时，同步输入框并直接检索
+    searchSeq () {
+      const keys = store.state.search_keys
+      if (!keys) return
+      this.search_input = keys
+      this.lastKeys = keys
+      this.fetchPage(1)
     }
   },
   beforeDestroy () {
@@ -270,6 +281,7 @@ export default {
         this.page = res.data.page || page
         this.hasSearched = true
         this.data_loading = false
+        store.commit('mutate_search_done')
       }).catch(() => {
         this.error = '请求超时，请稍后重试'
         this.data_loading = false

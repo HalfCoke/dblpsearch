@@ -1,20 +1,29 @@
 <template>
   <div>
     <section class="card p-5">
-      <h2 class="text-sm font-semibold text-gray-900">热门搜索</h2>
-      <div class="mt-3 h-40 w-full">
-        <vue-word-cloud
-          v-if="keywords.length"
-          class="h-full w-full"
-          :words="keywords"
-          :color="wordColor"
-          :font-size-ratio="8"
-          :spacing="3"
-          font-family="sans-serif"
-        />
-        <div v-else class="flex h-full items-center justify-center text-xs text-gray-400">
-          暂无搜索数据
-        </div>
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-900">热门搜索</h2>
+        <span class="inline-flex items-center gap-1 text-[11px] text-gray-400">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+          实时更新
+        </span>
+      </div>
+      <div
+        v-if="keywords.length"
+        class="mt-3 flex h-40 flex-wrap content-center items-center justify-center gap-x-3 gap-y-1.5 overflow-hidden"
+      >
+        <button
+          v-for="word in keywords"
+          :key="word.text"
+          type="button"
+          class="rounded leading-none transition duration-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          :style="wordStyle(word)"
+          :title="`搜索 ${word.text}（${word.count} 次）`"
+          @click="applyWord(word.text)"
+        >{{ word.text }}</button>
+      </div>
+      <div v-else class="flex h-40 items-center justify-center text-xs text-gray-400">
+        暂无搜索数据
       </div>
     </section>
 
@@ -94,50 +103,88 @@
 </template>
 
 <script>
-import VueWordCloud from 'vuewordcloud'
+import store from '@/store'
 import { request } from '@/requests'
+
+const POLL_INTERVAL = 5000
+const MAX_WORDS = 24
+const MIN_FONT_SIZE = 12
+const MAX_FONT_SIZE = 28
 
 export default {
   name: 'content_other',
-  components: { VueWordCloud },
   data () {
     return {
       drawer: false,
       keywords: [],
       maxWeight: 1,
-      timer: null
+      timer: null,
+      refreshTimer: null
     }
   },
   computed: {
     currentYear () {
       return new Date().getFullYear()
+    },
+    searchSeq () {
+      return store.state.search_seq
+    },
+    searchDoneSeq () {
+      return store.state.search_done_seq
+    }
+  },
+  watch: {
+    // 点击词云后与检索完成后都立即更新一次，保证词云随搜索频次实时变化
+    searchSeq () {
+      this.scheduleRefresh()
+    },
+    searchDoneSeq () {
+      this.scheduleRefresh()
     }
   },
   created () {
     this.getKeyWord()
-    this.timer = setInterval(this.getKeyWord, 10000)
+    this.timer = setInterval(this.getKeyWord, POLL_INTERVAL)
   },
   beforeDestroy () {
     clearInterval(this.timer)
+    clearTimeout(this.refreshTimer)
   },
   methods: {
-    wordColor ([, weight]) {
-      if (weight >= this.maxWeight * 0.6) return '#1d4ed8'
-      if (weight >= this.maxWeight * 0.3) return '#3b82f6'
-      return '#93c5fd'
+    scheduleRefresh () {
+      clearTimeout(this.refreshTimer)
+      this.refreshTimer = setTimeout(this.getKeyWord, 400)
+    },
+    wordStyle (word) {
+      const ratio = this.maxWeight > 0 ? Math.sqrt(word.count / this.maxWeight) : 0
+      const size = Math.round(MIN_FONT_SIZE + (MAX_FONT_SIZE - MIN_FONT_SIZE) * ratio)
+      const color = ratio >= 0.7 ? '#1d4ed8' : (ratio >= 0.4 ? '#3b82f6' : '#93c5fd')
+      return {
+        fontSize: `${size}px`,
+        color,
+        fontWeight: ratio >= 0.4 ? 600 : 400
+      }
     },
     buildKeywords (words) {
+      // 短语按空格拆词后按词累计频次，忽略大小写合并同一词
       const map = new Map()
       for (const [phrase, count] of words) {
         if (!phrase || phrase.length > 40 || phrase.indexOf('\\') !== -1) continue
-        for (const token of phrase.split(/\W/)) {
-          if (!token) continue
-          map.set(token, (map.get(token) || 0) + count)
+        for (const raw of phrase.split(/\W+/)) {
+          const token = raw.trim()
+          if (token.length < 2) continue
+          const key = token.toLowerCase()
+          const item = map.get(key)
+          if (item) {
+            item.count += count
+          } else {
+            map.set(key, { text: token, count })
+          }
         }
       }
-      return [...map.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 15)
+      return [...map.values()]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, MAX_WORDS)
     },
     getKeyWord () {
       request({
@@ -149,8 +196,11 @@ export default {
         }
       }).then(res => {
         this.keywords = this.buildKeywords(res.data.most_search_word || [])
-        this.maxWeight = this.keywords.length ? this.keywords[0][1] : 1
+        this.maxWeight = this.keywords.length ? this.keywords[0].count : 1
       }).catch(() => {})
+    },
+    applyWord (word) {
+      store.commit('mutate_search_keys', word)
     }
   }
 }
