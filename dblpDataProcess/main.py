@@ -43,7 +43,7 @@ def _export_DBLP_paper():
         return
     paper_category_link_dict = {}
     papers = parse_xml(xml_file, paper_category_link_dict)
-    save_docs_to_sqlite(papers, paper_category_link_dict["link"])
+    save_docs_to_sqlite(papers, paper_category_link_dict)
 
 
 if __name__ == '__main__':

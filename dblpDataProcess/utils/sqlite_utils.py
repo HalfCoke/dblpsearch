@@ -33,9 +33,10 @@ def open_db():
     return conn
 
 
-def save_docs_to_sqlite(papers, paper_category_link):
+def save_docs_to_sqlite(papers, paper_category_link_dict):
     """
     首次运行全量写入，之后仅重建当年数据（增量更新）
+    :param papers: parse_xml返回的生成器，遍历过程中才会填充paper_category_link_dict
     """
     conn = open_db()
     try:
@@ -49,7 +50,7 @@ def save_docs_to_sqlite(papers, paper_category_link):
             year_filter = datetime.now().year
             logging.info("程序非首次执行, 删除%d年数据后增量更新..." % year_filter)
             conn.execute("DELETE FROM papers WHERE year = ?", (str(year_filter),))
-        count = _batch_insert(conn, papers, paper_category_link, year_filter)
+        count = _batch_insert(conn, papers, paper_category_link_dict, year_filter)
         conn.commit()
         conn.execute("PRAGMA optimize")
         logging.info("写入检索库完成, 共%d条" % count)
@@ -64,10 +65,14 @@ def _has_papers(conn):
     return conn.execute("SELECT 1 FROM papers LIMIT 1").fetchone() is not None
 
 
-def _batch_insert(conn, papers, paper_category_link, year_filter):
+def _batch_insert(conn, papers, paper_category_link_dict, year_filter):
     batch = []
     total = 0
+    paper_category_link = None
     for paper in papers:
+        # 生成器遍历时parse_xml才会解析PDF并填充该字典
+        if paper_category_link is None:
+            paper_category_link = paper_category_link_dict["link"]
         row = get_paper_row(paper, paper_category_link)
         if row is None:
             continue
