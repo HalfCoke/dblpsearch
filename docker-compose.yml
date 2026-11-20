@@ -55,8 +55,7 @@ services:
         source: html
         target: /usr/share/nginx/html
     ports:
-      - 80:80
-      - 443:443
+      - 61080:80
     networks:
       - dblpweb
 
