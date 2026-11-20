@@ -1,4 +1,5 @@
 .idea
 dblp.xml.gz
-.deploy_key__pycache__/
+.deploy_key
+__pycache__/
 *.pyc
