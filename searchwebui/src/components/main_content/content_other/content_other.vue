@@ -108,8 +108,18 @@ import { request } from '@/requests'
 
 const POLL_INTERVAL = 5000
 const MAX_WORDS = 24
-const MIN_FONT_SIZE = 12
-const MAX_FONT_SIZE = 28
+const MIN_FONT_SIZE = 11
+const MAX_FONT_SIZE = 34
+// 颜色由浅到深：blue-200 -> blue-900
+const COLOR_LIGHT = [191, 219, 254]
+const COLOR_DARK = [30, 58, 138]
+// 检索词拆分后的无意义词，避免长句查询里的虚词占据词云
+const STOP_WORDS = new Set([
+  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'in', 'is', 'it',
+  'of', 'on', 'or', 'the', 'to', 'with', 'you', 'your', 'all', 'need', 'via', 'using',
+  'based', 'towards', 'toward', 'into', 'over', 'under', 'between', 'we', 'our',
+  'this', 'that', 'its', 'their', 'can', 'do', 'does', 'not'
+])
 
 export default {
   name: 'content_other',
@@ -118,6 +128,7 @@ export default {
       drawer: false,
       keywords: [],
       maxWeight: 1,
+      minWeight: 1,
       timer: null,
       refreshTimer: null
     }
@@ -156,14 +167,19 @@ export default {
       this.refreshTimer = setTimeout(this.getKeyWord, 400)
     },
     wordStyle (word) {
-      const ratio = this.maxWeight > 0 ? Math.sqrt(word.count / this.maxWeight) : 0
-      const size = Math.round(MIN_FONT_SIZE + (MAX_FONT_SIZE - MIN_FONT_SIZE) * ratio)
-      const color = ratio >= 0.7 ? '#1d4ed8' : (ratio >= 0.4 ? '#3b82f6' : '#93c5fd')
+      // 频次做 min-max 归一化，避免最大值把其他词的差异压平
+      const span = this.maxWeight - this.minWeight
+      const ratio = span > 0 ? (word.count - this.minWeight) / span : 1
+      const size = Math.round(MIN_FONT_SIZE + (MAX_FONT_SIZE - MIN_FONT_SIZE) * Math.pow(ratio, 0.8))
       return {
         fontSize: `${size}px`,
-        color,
-        fontWeight: ratio >= 0.4 ? 600 : 400
+        color: this.mixColor(ratio),
+        fontWeight: Math.round(400 + 200 * ratio)
       }
+    },
+    mixColor (ratio) {
+      const rgb = COLOR_LIGHT.map((start, i) => Math.round(start + (COLOR_DARK[i] - start) * ratio))
+      return `rgb(${rgb.join(', ')})`
     },
     buildKeywords (words) {
       // 短语按空格拆词后按词累计频次，忽略大小写合并同一词
@@ -174,6 +190,7 @@ export default {
           const token = raw.trim()
           if (token.length < 2) continue
           const key = token.toLowerCase()
+          if (STOP_WORDS.has(key)) continue
           const item = map.get(key)
           if (item) {
             item.count += count
@@ -196,7 +213,13 @@ export default {
         }
       }).then(res => {
         this.keywords = this.buildKeywords(res.data.most_search_word || [])
-        this.maxWeight = this.keywords.length ? this.keywords[0].count : 1
+        if (this.keywords.length) {
+          this.maxWeight = this.keywords[0].count
+          this.minWeight = this.keywords[this.keywords.length - 1].count
+        } else {
+          this.maxWeight = 1
+          this.minWeight = 1
+        }
       }).catch(() => {})
     },
     applyWord (word) {
