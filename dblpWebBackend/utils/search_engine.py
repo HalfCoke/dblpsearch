@@ -33,6 +33,7 @@ def _get_connection():
         conn = sqlite3.connect(SQLITE_DB_PATH, timeout=10)
         # Web 进程只读，WAL 模式下仍需要写权限打开 -shm 文件
         conn.execute("PRAGMA query_only = ON")
+        conn.execute("PRAGMA temp_store = MEMORY")
         _local.conn = conn
     return conn
 
@@ -74,19 +75,63 @@ def _count_matches(conn, match_query, category, yf, yt):
     if cached and time.time() - cached[0] < _TOTAL_CACHE_TTL:
         return cached[1]
     placeholders = ','.join(['?'] * len(category))
+    # 年份、类别来自 paper_meta，避免 FTS5 回读整行
     sql = """
         SELECT count(*)
-        FROM papers
-        WHERE papers MATCH ?
-          AND category IN ({placeholders})
-          AND year BETWEEN ? AND ?
+        FROM paper_meta m
+        WHERE m.year BETWEEN ? AND ?
+          AND m.category IN ({placeholders})
+          AND m.rowid IN (SELECT rowid FROM papers WHERE papers MATCH ?)
     """.format(placeholders=placeholders)
-    params = [match_query] + list(category) + [str(yf), str(yt)]
+    params = [yf, yt] + list(category) + [match_query]
     total = conn.execute(sql, params).fetchone()[0]
     if len(_total_cache) >= _TOTAL_CACHE_MAX:
         _total_cache.clear()
     _total_cache[cache_key] = (time.time(), total)
     return total
+
+
+def _select_ids(conn, match_query, category, yf, yt, sort, page_size, offset):
+    placeholders = ','.join(['?'] * len(category))
+    if sort == 'relevance':
+        sql = """
+            SELECT rowid
+            FROM papers
+            WHERE papers MATCH ?
+              AND rowid IN (
+                  SELECT rowid FROM paper_meta
+                  WHERE year BETWEEN ? AND ? AND category IN ({placeholders})
+              )
+            ORDER BY bm25(papers)
+            LIMIT ? OFFSET ?
+        """.format(placeholders=placeholders)
+        params = [match_query, yf, yt] + list(category) + [page_size, offset]
+    else:
+        sql = """
+            SELECT m.rowid
+            FROM paper_meta m
+            WHERE m.year BETWEEN ? AND ? AND m.category IN ({placeholders})
+              AND m.rowid IN (SELECT rowid FROM papers WHERE papers MATCH ?)
+            ORDER BY m.year DESC, m.rowid DESC
+            LIMIT ? OFFSET ?
+        """.format(placeholders=placeholders)
+        params = [yf, yt] + list(category) + [match_query, page_size, offset]
+    return [row[0] for row in conn.execute(sql, params)]
+
+
+def _fetch_rows(conn, match_query, ids):
+    if not ids:
+        return []
+    marks = ','.join(['?'] * len(ids))
+    sql = """
+        SELECT rowid, year, authors, ee_url, category, abbreviation,
+               highlight(papers, 0, ?, ?) AS title
+        FROM papers
+        WHERE rowid IN ({marks}) AND papers MATCH ?
+    """.format(marks=marks)
+    params = [HIGHLIGHT_PRE, HIGHLIGHT_POST] + ids + [match_query]
+    rows = {row[0]: row[1:] for row in conn.execute(sql, params)}
+    return [rows[i] for i in ids if i in rows]
 
 
 def search_papers(keys, category, yf, yt, sort='time', page=1, page_size=SEARCH_DEFAULT_PAGE_SIZE):
@@ -108,22 +153,8 @@ def search_papers(keys, category, yf, yt, sort='time', page=1, page_size=SEARCH_
         offset = (page - 1) * page_size
         if total == 0 or offset >= total:
             return [], total
-        order = 'bm25(papers), year DESC, rowid DESC' if sort == 'relevance' else 'year DESC, rowid DESC'
-        placeholders = ','.join(['?'] * len(category))
-        sql = """
-            SELECT year, authors, ee_url, category, abbreviation,
-                   highlight(papers, 0, ?, ?) AS title
-            FROM papers
-            WHERE papers MATCH ?
-              AND category IN ({placeholders})
-              AND year BETWEEN ? AND ?
-            ORDER BY {order}
-            LIMIT ? OFFSET ?
-        """.format(placeholders=placeholders, order=order)
-        params = [HIGHLIGHT_PRE, HIGHLIGHT_POST, match_query]
-        params += list(category)
-        params += [str(yf), str(yt), page_size, offset]
-        return conn.execute(sql, params).fetchall(), total
+        ids = _select_ids(conn, match_query, category, yf, yt, sort, page_size, offset)
+        return _fetch_rows(conn, match_query, ids), total
     except sqlite3.Error:
         logging.exception("检索失败, keys=" + str(keys))
         return [], 0

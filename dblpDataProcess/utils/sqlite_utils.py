@@ -20,7 +20,19 @@ CREATE_TABLE_SQL = """
     )
 """
 
-INSERT_SQL = "INSERT INTO papers VALUES (?, ?, ?, ?, ?, ?)"
+# FTS5 过滤 UNINDEXED 列需要回读整行，代价很高；
+# 用一张小的元数据表承载年份与类别，供 Web 端按时间排序和过滤
+CREATE_META_SQL = """
+    CREATE TABLE paper_meta(
+        rowid INTEGER PRIMARY KEY,
+        year INTEGER NOT NULL,
+        category TEXT NOT NULL
+    )
+"""
+CREATE_META_INDEX_SQL = "CREATE INDEX idx_paper_meta_year_category ON paper_meta(year, category)"
+
+INSERT_SQL = "INSERT INTO papers(rowid, title, authors, year, abbreviation, category, ee_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
+INSERT_META_SQL = "INSERT INTO paper_meta(rowid, year, category) VALUES (?, ?, ?)"
 
 
 def open_db():
@@ -40,16 +52,21 @@ def save_docs_to_sqlite(papers, paper_category_link_dict):
     """
     conn = open_db()
     try:
-        is_first_run = not _has_papers(conn)
+        is_first_run = not _has_papers(conn) or not _has_table(conn, 'paper_meta')
         if is_first_run:
             logging.info("程序首次执行, 全量写入检索库...")
             conn.execute("DROP TABLE IF EXISTS papers")
+            conn.execute("DROP TABLE IF EXISTS paper_meta")
             conn.execute(CREATE_TABLE_SQL)
+            conn.execute(CREATE_META_SQL)
+            conn.execute(CREATE_META_INDEX_SQL)
             year_filter = None
         else:
             year_filter = datetime.now().year
             logging.info("程序非首次执行, 删除%d年数据后增量更新..." % year_filter)
-            conn.execute("DELETE FROM papers WHERE year = ?", (str(year_filter),))
+            conn.execute("DELETE FROM papers WHERE rowid IN "
+                         "(SELECT rowid FROM paper_meta WHERE year = ?)", (year_filter,))
+            conn.execute("DELETE FROM paper_meta WHERE year = ?", (year_filter,))
         count = _batch_insert(conn, papers, paper_category_link_dict, year_filter)
         conn.commit()
         conn.execute("PRAGMA optimize")
@@ -65,8 +82,14 @@ def _has_papers(conn):
     return conn.execute("SELECT 1 FROM papers LIMIT 1").fetchone() is not None
 
 
+def _has_table(conn, name):
+    sql = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?"
+    return conn.execute(sql, (name,)).fetchone() is not None
+
+
 def _batch_insert(conn, papers, paper_category_link_dict, year_filter):
-    batch = []
+    next_id = conn.execute("SELECT coalesce(max(rowid), 0) FROM papers").fetchone()[0] + 1
+    fts_batch, meta_batch = [], []
     total = 0
     paper_category_link = None
     for paper in papers:
@@ -78,15 +101,20 @@ def _batch_insert(conn, papers, paper_category_link_dict, year_filter):
             continue
         if year_filter is not None and row[2] != str(year_filter):
             continue
-        batch.append(row)
-        if len(batch) >= DB_BATCH_SIZE:
-            conn.executemany(INSERT_SQL, batch)
-            total += len(batch)
+        fts_batch.append((next_id,) + row)
+        meta_batch.append((next_id, int(row[2]), row[4]))
+        next_id += 1
+        if len(fts_batch) >= DB_BATCH_SIZE:
+            conn.executemany(INSERT_SQL, fts_batch)
+            conn.executemany(INSERT_META_SQL, meta_batch)
+            total += len(fts_batch)
             logging.info("已写入%d条" % total)
-            batch.clear()
-    if batch:
-        conn.executemany(INSERT_SQL, batch)
-        total += len(batch)
+            fts_batch.clear()
+            meta_batch.clear()
+    if fts_batch:
+        conn.executemany(INSERT_SQL, fts_batch)
+        conn.executemany(INSERT_META_SQL, meta_batch)
+        total += len(fts_batch)
     return total
 
 

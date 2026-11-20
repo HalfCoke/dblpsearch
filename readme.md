@@ -3,8 +3,8 @@
 ![](https://gitee.com/halfcoke/blog_img/raw/master/20210302094748.svg)
 1. 论文检索使用 `SQLite + FTS5` 实现，单文件存储，无需额外部署检索服务
 2. 项目使用`docker-compose.yml`进行部署，用到了4个镜像：
-   - `dblp_data_process`：`registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-data-process:1.1.0`  该镜像为数据解析及更新模块，负责将DBLP数据写入SQLite检索库
-   - `dblp_web_backend`：`registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.2.0`   该镜像为使用Flask开发的WEB后端
+   - `dblp_data_process`：`registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-data-process:1.2.0`  该镜像为数据解析及更新模块，负责将DBLP数据写入SQLite检索库
+   - `dblp_web_backend`：`registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.4.0`   该镜像为使用Flask开发的WEB后端
    - `webserver`：`nginx:1.19.7-alpine`   该镜像为官方nginx镜像
    - `search_data_storage`：`redis:6-alpine`   该镜像用来统计搜索热词
 3. 使用`docker-compose.yml`进行部署时，`volumes`说明如下：
@@ -18,6 +18,20 @@
    - `nginx_conf`：该volumes用来进行nginx的配置，当前项目路径`nginx_conf`即为nginx配置文件
    - `html`：该volumes用来存放前端代码
    - `redis_data`：该volumes用来存放Redis数据
+
+## 检索接口
+`POST /api/v1/search`，请求体：
+
+| 参数 | 说明 |
+| --- | --- |
+| `keys` | 检索关键词，多个关键词用空格分隔，需同时命中（AND） |
+| `category` | 类别数组，如 `["A","B","C"]` |
+| `yf` / `yt` | 年份范围，闭区间 |
+| `sort` | `time` 按发表年份倒序（默认），`relevance` 按 BM25 相关度 |
+| `page` | 页码，从 1 开始，默认 1 |
+| `page_size` | 每页条数，默认 20，最大 100 |
+
+响应包含 `papers`（当前页论文）、`total`（命中总数）、`page`、`page_size`、`sort`。
 
 ## 注意事项
 
