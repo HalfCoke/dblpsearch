@@ -75,15 +75,15 @@ def _count_matches(conn, match_query, category, yf, yt):
     if cached and time.time() - cached[0] < _TOTAL_CACHE_TTL:
         return cached[1]
     placeholders = ','.join(['?'] * len(category))
-    # 年份、类别来自 paper_meta，避免 FTS5 回读整行
+    # 年份、类别来自 paper_meta，用 JOIN 让 FTS 命中集作外层循环，避免 IN 子查询退化
     sql = """
         SELECT count(*)
-        FROM paper_meta m
+        FROM (SELECT rowid FROM papers WHERE papers MATCH ?) f
+        JOIN paper_meta m ON m.rowid = f.rowid
         WHERE m.year BETWEEN ? AND ?
           AND m.category IN ({placeholders})
-          AND m.rowid IN (SELECT rowid FROM papers WHERE papers MATCH ?)
     """.format(placeholders=placeholders)
-    params = [yf, yt] + list(category) + [match_query]
+    params = [match_query, yf, yt] + list(category)
     total = conn.execute(sql, params).fetchone()[0]
     if len(_total_cache) >= _TOTAL_CACHE_MAX:
         _total_cache.clear()
@@ -94,28 +94,31 @@ def _count_matches(conn, match_query, category, yf, yt):
 def _select_ids(conn, match_query, category, yf, yt, sort, page_size, offset):
     placeholders = ','.join(['?'] * len(category))
     if sort == 'relevance':
+        # bm25 必须在子查询内计算（外层子查询无法引用 papers），再与元数据表 JOIN 过滤
         sql = """
-            SELECT rowid
-            FROM papers
-            WHERE papers MATCH ?
-              AND rowid IN (
-                  SELECT rowid FROM paper_meta
-                  WHERE year BETWEEN ? AND ? AND category IN ({placeholders})
-              )
-            ORDER BY bm25(papers)
+            SELECT f.rid
+            FROM (
+                SELECT rowid AS rid, bm25(papers) AS score
+                FROM papers
+                WHERE papers MATCH ?
+            ) f
+            JOIN paper_meta m ON m.rowid = f.rid
+            WHERE m.year BETWEEN ? AND ? AND m.category IN ({placeholders})
+            ORDER BY f.score
             LIMIT ? OFFSET ?
         """.format(placeholders=placeholders)
         params = [match_query, yf, yt] + list(category) + [page_size, offset]
     else:
+        # FTS 只负责给出命中 rowid，年份倒序由 paper_meta 的 (year, category) 索引承担
         sql = """
             SELECT m.rowid
-            FROM paper_meta m
+            FROM (SELECT rowid FROM papers WHERE papers MATCH ?) f
+            JOIN paper_meta m ON m.rowid = f.rowid
             WHERE m.year BETWEEN ? AND ? AND m.category IN ({placeholders})
-              AND m.rowid IN (SELECT rowid FROM papers WHERE papers MATCH ?)
             ORDER BY m.year DESC, m.rowid DESC
             LIMIT ? OFFSET ?
         """.format(placeholders=placeholders)
-        params = [yf, yt] + list(category) + [match_query, page_size, offset]
+        params = [match_query, yf, yt] + list(category) + [page_size, offset]
     return [row[0] for row in conn.execute(sql, params)]
 
 
