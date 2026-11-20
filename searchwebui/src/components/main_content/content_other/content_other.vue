@@ -1,13 +1,7 @@
 <template>
   <div>
     <section class="card p-5">
-      <div class="flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-gray-900">热门搜索</h2>
-        <span class="inline-flex items-center gap-1 text-[11px] text-gray-400">
-          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-          实时更新
-        </span>
-      </div>
+      <h2 class="text-sm font-semibold text-gray-900">热门搜索</h2>
       <div
         v-if="keywords.length"
         ref="cloud"
