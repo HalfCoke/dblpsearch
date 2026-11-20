@@ -28,7 +28,7 @@ export default {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  background-image: url("https://cdn.jsdelivr.net/gh/HalfCoke/blog_img@master/img/202205011158935.webp");
+  background-image: url("https://cdn.osyb.cn/gh/HalfCoke/blog_img@master/img/202205011158935.webp");
 }
 
 .main-text {
