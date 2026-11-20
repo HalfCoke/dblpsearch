@@ -1,13 +1,13 @@
-import axios from "axios";
+import axios from 'axios'
 
-export function request(config){
-  const instance = axios.create({
-    baseURL: 'https://www.halfcoke.cn',
-    timeout: 50000,
-  })
+const instance = axios.create({
+  baseURL: 'https://www.halfcoke.cn',
+  timeout: 50000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
 
+export function request (config) {
   return instance(config)
 }
-
-
-

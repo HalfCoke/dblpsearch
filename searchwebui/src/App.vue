@@ -1,31 +1,44 @@
 <template>
-	<div id="app">
-		<el-backtop :bottom="100" :visibility-height="650">
-			<div class="back_top">
-				UP
-			</div>
-		</el-backtop>
-		<router-view/>
-	</div>
+  <div id="app">
+    <router-view/>
+    <transition name="fade">
+      <button
+        v-show="showBackTop"
+        class="fixed bottom-6 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700"
+        aria-label="回到顶部"
+        @click="scrollToTop"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd"
+                d="M10 17a1 1 0 01-1-1V6.414L5.707 9.707a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0l5 5a1 1 0 01-1.414 1.414L11 6.414V16a1 1 0 01-1 1z"
+                clip-rule="evenodd"/>
+        </svg>
+      </button>
+    </transition>
+  </div>
 </template>
 
-<style>
-#app {
-	height: 100%;
-}
-
-.back_top {
-	height: 100%;
-	width: 100%;
-	background-color: #f2f5f6;
-	box-shadow: 0 0 6px rgba(0, 0, 0, .12);
-	text-align: center;
-	line-height: 40px;
-	color: #1989fa;
-}
-</style>
 <script>
 export default {
-	name: 'App'
+  name: 'App',
+  data () {
+    return {
+      showBackTop: false
+    }
+  },
+  mounted () {
+    window.addEventListener('scroll', this.handleScroll)
+  },
+  beforeDestroy () {
+    window.removeEventListener('scroll', this.handleScroll)
+  },
+  methods: {
+    handleScroll () {
+      this.showBackTop = window.scrollY > 650
+    },
+    scrollToTop () {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
 }
 </script>

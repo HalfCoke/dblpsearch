@@ -2,14 +2,16 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 
 Vue.use(Vuex)
-let date = new Date;
+
+const date = new Date()
+
 export default new Vuex.Store({
   state: {
     from_year: 1930,
     to_year: date.getFullYear(),
     categories: ['A', 'B', 'C'],
     papers: null,
-    display_papers: null
+    display_papers: []
   },
   mutations: {
     mutate_from_year (state, n) {
@@ -28,13 +30,15 @@ export default new Vuex.Store({
       state.display_papers = papers
     },
     mutate_display_papers_by_filter (state) {
-      let pre_display_papers = []
-      for (let paper of state.papers) {
-        if ((state.categories.indexOf(paper.category) !== -1) && (paper.year >= state.from_year && paper.year <= state.to_year)){
-          pre_display_papers.push(paper)
-        }
+      if (!state.papers) {
+        state.display_papers = []
+        return
       }
-      this.commit('mutate_display_papers', pre_display_papers)
+      state.display_papers = state.papers.filter(paper => (
+        state.categories.indexOf(paper.category) !== -1 &&
+        paper.year >= state.from_year &&
+        paper.year <= state.to_year
+      ))
     }
   },
   actions: {},
