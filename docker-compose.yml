@@ -1,36 +1,11 @@
 version: '3.9'
 services:
-  es:
-    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/elasticsearch:7.11.1
-    container_name: es
-    environment:
-      - node.name=es
-      - cluster.name=es-docker-cluster
-      - cluster.initial_master_nodes=es
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-      - type: volume
-        source: es_conf
-        target: /usr/share/elasticsearch/config
-    ports:
-      - 9200:9200
-    networks:
-      - dblpweb
-
   dblp_data_process:
-    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-data-process:1.0.0
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-data-process:1.1.0
     container_name: dblp_data_process
     command:
       - "python"
       - "main.py"
-    depends_on:
-      - "es"
     volumes:
       - type: volume
         source: dblpweblog
@@ -41,14 +16,16 @@ services:
       - type: volume
         source: dblpdata
         target: /opt/dblpDataProcess/resources
+      - type: volume
+        source: dblpdb
+        target: /opt/dblpDataProcess/db
     networks:
       - dblpweb
 
   dblp_web_backend:
-    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.1.0
+    image: registry.cn-beijing.aliyuncs.com/env_halfcoke/dblp-web-backend:2.2.0
     container_name: dblp_web_backend
     depends_on:
-      - "es"
       - "search_data_storage"
     ports:
       - 5051:5051
@@ -59,6 +36,9 @@ services:
       - type: volume
         source: dblpwebconf
         target: /opt/dblpWebBackend/conf
+      - type: volume
+        source: dblpdb
+        target: /opt/dblpWebBackend/db
     networks:
       - dblpweb
 
@@ -66,7 +46,6 @@ services:
     image: nginx:1.19.7-alpine
     container_name: webserver
     depends_on:
-      - "es"
       - "dblp_web_backend"
     volumes:
       - type: volume
@@ -108,6 +87,12 @@ volumes:
       type: 'none'
       o: 'bind'
       device: '/opt/dblpweb/data'
+  dblpdb:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/dblpweb/db'
   nginx_conf:
     driver: local
     driver_opts:
@@ -120,16 +105,8 @@ volumes:
       type: 'none'
       o: 'bind'
       device: '/opt/dblpweb/searchwebui/dist'
-  es_data:
-    driver: local
   redis_data:
     driver: local
-  es_conf:
-    driver: local
-    driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: '/opt/elasticsearch/conf'
 networks:
   dblpweb:
     driver: bridge

@@ -5,15 +5,14 @@ import os
 
 HOME_PATH = os.path.dirname(os.path.abspath(__file__)).rstrip('/conf')
 
-# elasticsearch地址
-ELASTICSEARCH_HOST = ["es:9200"]
-ELASTICSEARCH_INDEX = "dblp_cata_paper_elastic"
+# 论文检索库（SQLite + FTS5），数据进程写入，Web 后端只读查询
+SQLITE_DB_PATH = os.environ.get('DBLP_DB_PATH', HOME_PATH + '/db/dblp.sqlite')
 
 #########################################################################################################
 # dblp_web_backend容器配置部分
 #########################################################################################################
-# 需要elasticsearch一次性返回的最大数据条数
-ELASTICSEARCH_RES_MAX_NUM = 1500
+# 一次检索最多返回的论文条数
+SEARCH_RES_MAX_NUM = 1500
 
 # Redis配置部分
 REDIS_HOST = "search_data_storage"
@@ -23,12 +22,8 @@ RECENT_WORD = "recent_search"
 #########################################################################################################
 # dblp_data_process容器配置部分
 #########################################################################################################
-# 并发写入elasticsearch的线程数量
-MAX_THREAD_SIZE = 30
-
-# 初始化函数等待运行的时间，其他服务虽然已经启动，但是也其他服务也需要初始化的过程，
-# 因此设置此等待时间可以确保ES已经启动，再进行数据写入
-INIT_WAIT_TIME = 30
+# 单次批量写入SQLite的论文条数
+DB_BATCH_SIZE = 20000
 
 # xml文档中文章的标签
 # PAPER_TAG = ['article', 'inproceedings', 'proceedings']
