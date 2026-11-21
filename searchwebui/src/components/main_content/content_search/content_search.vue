@@ -1,5 +1,5 @@
 <template>
-  <section class="card overflow-hidden">
+  <section class="card overflow-hidden lg:flex lg:min-h-[360px] lg:flex-col">
     <div class="border-b border-gray-100 p-4 sm:p-5">
       <form class="flex gap-2" @submit.prevent="handleSearch">
         <div class="relative flex-1">
@@ -54,7 +54,7 @@
       </form>
     </div>
 
-    <div class="p-4 sm:p-5">
+    <div class="p-4 sm:p-5 lg:flex lg:flex-1 lg:flex-col">
       <div v-if="error" class="mb-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600"
            role="alert">
         <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -149,7 +149,7 @@
         </div>
       </template>
 
-      <div v-else class="py-12 text-center">
+      <div v-else class="py-12 text-center lg:flex lg:flex-1 lg:flex-col lg:items-center lg:justify-center lg:py-0">
         <svg class="mx-auto h-10 w-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.5" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round"

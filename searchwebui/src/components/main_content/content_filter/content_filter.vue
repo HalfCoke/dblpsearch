@@ -1,5 +1,5 @@
 <template>
-  <section class="card p-5">
+  <section class="card p-5 lg:min-h-[360px]">
     <h2 class="text-sm font-semibold text-gray-900">过滤器</h2>
 
     <div class="mt-5">

@@ -1,11 +1,11 @@
 <template>
   <div>
-    <section ref="section" class="card p-5">
+    <section ref="section" class="card p-5 lg:flex lg:min-h-[360px] lg:flex-col">
       <h2 class="text-sm font-semibold text-gray-900">热门搜索</h2>
       <div
         v-if="keywords.length"
         ref="cloud"
-        class="relative mt-3 h-56 overflow-hidden"
+        class="relative mt-3 h-56 overflow-hidden lg:h-auto lg:flex-1"
       >
         <button
           v-for="word in placedWords"
@@ -18,7 +18,7 @@
           @click="applyWord(word.text)"
         >{{ word.text }}</button>
       </div>
-      <div v-else class="flex h-56 items-center justify-center text-xs text-gray-400">
+      <div v-else class="flex h-56 items-center justify-center text-xs text-gray-400 lg:h-auto lg:flex-1">
         暂无搜索数据
       </div>
     </section>
