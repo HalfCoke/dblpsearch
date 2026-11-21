@@ -5,7 +5,7 @@
     <div class="mt-5">
       <div class="flex items-center justify-between">
         <h3 class="text-xs font-medium text-gray-500">会议 / 期刊类别</h3>
-        <label class="flex cursor-pointer select-none items-center gap-1.5 text-xs text-gray-500">
+        <label class="flex min-h-[44px] cursor-pointer select-none items-center gap-1.5 text-xs text-gray-500">
           <input
             type="checkbox"
             class="peer sr-only"
@@ -34,7 +34,7 @@
         <label
           v-for="category in categories"
           :key="category"
-          class="flex cursor-pointer select-none items-center gap-1.5 text-sm text-gray-700"
+          class="flex min-h-[44px] cursor-pointer select-none items-center gap-1.5 text-sm text-gray-700"
         >
           <input
             type="checkbox"
@@ -75,6 +75,7 @@
             step="1"
             :value="range[0]"
             aria-label="起始年份"
+            :aria-valuetext="`${range[0]} 年`"
             @input="handleLeftInput"
           >
           <input
@@ -85,6 +86,7 @@
             step="1"
             :value="range[1]"
             aria-label="终止年份"
+            :aria-valuetext="`${range[1]} 年`"
             @input="handleRightInput"
           >
         </div>

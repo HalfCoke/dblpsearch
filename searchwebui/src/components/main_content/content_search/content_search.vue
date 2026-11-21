@@ -14,6 +14,10 @@
             class="field pl-9 pr-9"
             type="text"
             placeholder="搜索论文标题，多个关键词用空格分隔"
+            aria-label="搜索论文标题，多个关键词用空格分隔"
+            autocomplete="off"
+            spellcheck="false"
+            enterkeyhint="search"
             @input="handleInput"
           >
           <button
@@ -51,7 +55,8 @@
     </div>
 
     <div class="p-4 sm:p-5">
-      <div v-if="error" class="mb-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+      <div v-if="error" class="mb-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600"
+           role="alert">
         <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd"
                 d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -60,8 +65,8 @@
         {{ error }}
       </div>
 
-      <div v-if="data_loading && !hasSearched">
-        <div v-for="i in 3" :key="i" class="animate-pulse border-b border-gray-100 py-3 last:border-0">
+      <div v-if="data_loading && !hasSearched" aria-hidden="true">
+        <div v-for="i in 3" :key="i" class="animate-pulse border-b border-gray-100 py-3 last:border-0 motion-reduce:animate-none">
           <div class="h-4 w-3/4 rounded bg-gray-100"></div>
           <div class="mt-2 h-3 w-1/2 rounded bg-gray-100"></div>
           <div class="mt-3 flex gap-2">
@@ -74,41 +79,47 @@
 
       <template v-else-if="hasSearched">
         <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <span class="text-xs text-gray-500">
+          <p class="text-xs text-gray-500" role="status" aria-live="polite" aria-atomic="true">
             共 <span class="font-semibold tabular-nums text-gray-700">{{ formattedTotal }}</span> 篇结果
-          </span>
-          <div class="flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 text-xs">
+          </p>
+          <div class="flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5 text-xs" role="group" aria-label="排序方式">
             <button
               v-for="option in sortOptions"
               :key="option.value"
               type="button"
               class="rounded-md px-2 py-1 transition"
               :class="sort === option.value ? 'bg-white font-medium text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+              :aria-pressed="String(sort === option.value)"
               @click="changeSort(option.value)"
             >{{ option.label }}</button>
           </div>
         </div>
 
-        <div :class="{ 'pointer-events-none opacity-50': data_loading }">
-          <article
-            v-for="paper in papers"
-            :key="genPaperKey(paper)"
-            class="group cursor-pointer border-b border-gray-100 px-2 py-3 transition last:border-0 hover:bg-gray-50"
-            @click="openLink(paper.url)"
-          >
-            <span class="block text-sm font-semibold leading-relaxed text-gray-900 transition group-hover:text-blue-600"
-                  v-html="paper.title"></span>
-            <div class="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-gray-500">
-              <span v-for="author in visibleAuthors(paper)" :key="author">{{ author }}</span>
-            </div>
-            <div class="mt-2 flex flex-wrap items-center gap-2">
-              <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] tabular-nums text-gray-600">{{ paper.year }}</span>
-              <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{{ paper.abbreviation }}</span>
-              <span class="rounded px-1.5 py-0.5 text-[11px] font-medium" :class="categoryClass(paper.category)">
-                {{ paper.category }}
-              </span>
-            </div>
-          </article>
+        <div :class="{ 'pointer-events-none opacity-50': data_loading }" :aria-busy="data_loading ? 'true' : 'false'">
+          <ul v-if="papers.length" role="list" class="divide-y divide-gray-100">
+            <li v-for="paper in papers" :key="genPaperKey(paper)">
+              <component
+                :is="paper.url ? 'a' : 'div'"
+                :href="paper.url || undefined"
+                :target="paper.url ? '_blank' : undefined"
+                :rel="paper.url ? 'noopener' : undefined"
+                class="group block rounded-lg px-2 py-3 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+              >
+                <span class="block text-sm font-semibold leading-relaxed text-gray-900 transition group-hover:text-blue-600"
+                      v-html="paper.title"></span>
+                <div class="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-gray-500">
+                  <span v-for="author in visibleAuthors(paper)" :key="author">{{ author }}</span>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] tabular-nums text-gray-600">{{ paper.year }}</span>
+                  <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{{ paper.abbreviation }}</span>
+                  <span class="rounded px-1.5 py-0.5 text-[11px] font-medium" :class="categoryClass(paper.category)">
+                    {{ paper.category }}
+                  </span>
+                </div>
+              </component>
+            </li>
+          </ul>
 
           <div v-if="papers.length === 0" class="py-12 text-center">
             <svg class="mx-auto h-10 w-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -120,21 +131,21 @@
             <p class="mt-1 text-xs text-gray-400">多个关键词需同时命中，可减少关键词或放宽年份与类别筛选</p>
           </div>
 
-          <div v-if="totalPages > 1" class="mt-4 flex items-center justify-center gap-3 text-xs">
+          <nav v-if="totalPages > 1" class="mt-4 flex items-center justify-center gap-3 text-xs" aria-label="结果分页">
             <button
               type="button"
               class="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
               :disabled="page <= 1 || data_loading"
               @click="goPage(page - 1)"
             >上一页</button>
-            <span class="tabular-nums text-gray-500">{{ page }} / {{ totalPages }}</span>
+            <span class="tabular-nums text-gray-500" aria-live="off">{{ page }} / {{ totalPages }}</span>
             <button
               type="button"
               class="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
               :disabled="page >= totalPages || data_loading"
               @click="goPage(page + 1)"
             >下一页</button>
-          </div>
+          </nav>
         </div>
       </template>
 
@@ -239,9 +250,6 @@ export default {
       if (category === 'A') return 'bg-emerald-50 text-emerald-600'
       if (category === 'B') return 'bg-amber-50 text-amber-600'
       return 'bg-gray-100 text-gray-500'
-    },
-    openLink (link) {
-      if (link) window.open(link)
     },
     handleSearch () {
       const keys = this.search_input.trim()

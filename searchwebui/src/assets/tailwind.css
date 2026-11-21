@@ -40,6 +40,15 @@
   outline: none;
 }
 
+/* 滑块用 thumb 上的焦点环替代默认轮廓，键盘操作时可见 */
+.range-input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.range-input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
 .range-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   pointer-events: auto;
@@ -82,4 +91,14 @@
 .slide-enter,
 .slide-leave-to {
   transform: translateX(100%);
+}
+
+/* 尊重系统「减少动态效果」设置 */
+@media (prefers-reduced-motion: reduce) {
+  .fade-enter-active,
+  .fade-leave-active,
+  .slide-enter-active,
+  .slide-leave-active {
+    transition: none;
+  }
 }

@@ -1,8 +1,10 @@
 <template>
   <div class="flex min-h-screen flex-col bg-gray-50">
     <navbar/>
-    <main_intro/>
-    <main_content/>
+    <main class="flex-1">
+      <main_intro/>
+      <main_content/>
+    </main>
   </div>
 </template>
 

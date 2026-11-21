@@ -1,6 +1,6 @@
 <template>
   <div>
-    <section class="card p-5">
+    <section ref="section" class="card p-5">
       <h2 class="text-sm font-semibold text-gray-900">热门搜索</h2>
       <div
         v-if="keywords.length"
@@ -11,9 +11,10 @@
           v-for="word in placedWords"
           :key="word.text"
           type="button"
-          class="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded leading-none transition-all duration-300 hover:z-10 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          class="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded leading-none transition-all duration-300 hover:z-10 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 motion-reduce:transition-none"
           :style="wordStyle(word)"
           :title="`搜索 ${word.text}（${word.count} 次）`"
+          :aria-label="`搜索 ${word.text}，出现 ${word.count} 次`"
           @click="applyWord(word.text)"
         >{{ word.text }}</button>
       </div>
@@ -41,7 +42,7 @@
       </div>
 
       <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-        <button class="font-medium text-blue-600 transition hover:text-blue-700" @click="drawer = true">
+        <button ref="contactBtn" class="font-medium text-blue-600 transition hover:text-blue-700" @click="openDrawer">
           与我联系
         </button>
         <span>© {{ currentYear }} HalfCoke</span>
@@ -49,16 +50,25 @@
     </footer>
 
     <transition name="fade">
-      <div v-if="drawer" class="fixed inset-0 z-50 bg-gray-900/40" @click="drawer = false"></div>
+      <div v-if="drawer" class="fixed inset-0 z-50 bg-gray-900/40" aria-hidden="true" @click="closeDrawer"></div>
     </transition>
     <transition name="slide">
-      <aside v-if="drawer" class="fixed inset-y-0 right-0 z-50 flex w-80 max-w-[85vw] flex-col bg-white p-6 shadow-2xl">
+      <aside
+        v-if="drawer"
+        ref="drawer"
+        class="fixed inset-y-0 right-0 z-50 flex w-80 max-w-[85vw] flex-col overflow-y-auto bg-white p-6 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="联系方式"
+        @keydown.esc="closeDrawer"
+      >
         <div class="flex items-center justify-between">
           <h3 class="text-base font-semibold text-gray-900">联系方式</h3>
           <button
+            ref="closeBtn"
             class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
             aria-label="关闭"
-            @click="drawer = false"
+            @click="closeDrawer"
           >
             <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd"
@@ -128,7 +138,11 @@ export default {
       timer: null,
       refreshTimer: null,
       resizeTimer: null,
-      measureCtx: null
+      measureCtx: null,
+      observer: null,
+      inViewport: true,
+      pageVisible: true,
+      lastSignature: ''
     }
   },
   computed: {
@@ -151,20 +165,59 @@ export default {
       this.scheduleRefresh()
     }
   },
-  created () {
-    this.getKeyWord()
-    this.timer = setInterval(this.getKeyWord, POLL_INTERVAL)
-  },
   mounted () {
     window.addEventListener('resize', this.handleResize)
+    document.addEventListener('visibilitychange', this.handleVisibility)
+    // 组件滚出视口或标签页切到后台时暂停轮询，回到可见时立即刷新
+    if ('IntersectionObserver' in window) {
+      this.observer = new IntersectionObserver(entries => {
+        this.inViewport = entries[0].isIntersecting
+        this.syncPolling()
+      }, { rootMargin: '100px' })
+      this.observer.observe(this.$refs.section)
+    }
+    this.syncPolling()
   },
   beforeDestroy () {
-    clearInterval(this.timer)
+    this.stopPolling()
     clearTimeout(this.refreshTimer)
     clearTimeout(this.resizeTimer)
     window.removeEventListener('resize', this.handleResize)
+    document.removeEventListener('visibilitychange', this.handleVisibility)
+    if (this.observer) this.observer.disconnect()
   },
   methods: {
+    startPolling () {
+      if (this.timer) return
+      this.timer = setInterval(this.getKeyWord, POLL_INTERVAL)
+    },
+    stopPolling () {
+      clearInterval(this.timer)
+      this.timer = null
+    },
+    handleVisibility () {
+      this.pageVisible = !document.hidden
+      this.syncPolling()
+    },
+    syncPolling () {
+      const active = this.pageVisible && this.inViewport
+      if (!active) {
+        this.stopPolling()
+        return
+      }
+      this.startPolling()
+      this.getKeyWord()
+    },
+    openDrawer () {
+      this.drawer = true
+      this.$nextTick(() => {
+        if (this.$refs.closeBtn) this.$refs.closeBtn.focus()
+      })
+    },
+    closeDrawer () {
+      this.drawer = false
+      if (this.$refs.contactBtn) this.$refs.contactBtn.focus()
+    },
     scheduleRefresh () {
       clearTimeout(this.refreshTimer)
       this.refreshTimer = setTimeout(this.getKeyWord, 400)
@@ -268,7 +321,12 @@ export default {
           recent_k: 10
         }
       }).then(res => {
-        this.keywords = this.buildKeywords(res.data.most_search_word || [])
+        const next = this.buildKeywords(res.data.most_search_word || [])
+        // 数据没变化时跳过重新布局，避免每 5 秒无意义的重排与动画抖动
+        const signature = next.map(word => `${word.text}:${word.count}`).join('|')
+        if (signature === this.lastSignature) return
+        this.lastSignature = signature
+        this.keywords = next
         if (this.keywords.length) {
           this.maxWeight = this.keywords[0].count
           this.minWeight = this.keywords[this.keywords.length - 1].count
