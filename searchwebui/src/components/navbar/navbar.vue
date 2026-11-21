@@ -1,5 +1,6 @@
 <template>
-  <header class="border-b border-gray-100 bg-white">
+  <div>
+    <header class="border-b border-gray-100 bg-white">
     <div class="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
       <router-link to="/" class="flex items-center" aria-label="DBLP Search">
         <svg class="h-6 w-auto" viewBox="0 0 171 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -16,12 +17,90 @@
               fill="#718096"/>
         </svg>
       </router-link>
+      <button
+        ref="contactBtn"
+        class="ml-auto rounded-lg px-3 py-1.5 text-sm font-medium text-blue-600 transition hover:bg-blue-50 hover:text-blue-700"
+        @click="openDrawer"
+      >与我联系</button>
     </div>
-  </header>
+    </header>
+
+    <transition name="fade">
+      <div v-if="drawer" class="fixed inset-0 z-50 bg-gray-900/40" aria-hidden="true" @click="closeDrawer"></div>
+    </transition>
+    <transition name="slide">
+      <aside
+        v-if="drawer"
+        class="fixed inset-y-0 right-0 z-50 flex w-80 max-w-[85vw] flex-col overflow-y-auto bg-white p-6 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="联系方式"
+        @keydown.esc="closeDrawer"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-semibold text-gray-900">联系方式</h3>
+          <button
+            ref="closeBtn"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+            aria-label="关闭"
+            @click="closeDrawer"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="mt-8 space-y-5 text-sm text-gray-600">
+          <div>
+            <span class="text-xs text-gray-400">邮箱</span>
+            <p class="mt-1">halfcoke@163.com</p>
+          </div>
+          <div>
+            <span class="text-xs text-gray-400">博客</span>
+            <p class="mt-1">
+              <a class="text-blue-600 transition hover:text-blue-700" href="https://halfcoke.github.io/" target="_blank"
+                 rel="noopener">
+                https://halfcoke.github.io
+              </a>
+            </p>
+          </div>
+          <div>
+            <span class="text-xs text-gray-400">公众号</span>
+            <p class="mt-1">微信搜索 “Coder沙拉” 或 “half_640”</p>
+            <div class="mt-3 flex justify-center">
+              <img class="w-2/3 rounded-lg border border-gray-100"
+                   src="https://cdn.osyb.cn/gh/HalfCoke/blog_img@master/img/202205011147820.png"
+                   alt="公众号二维码">
+            </div>
+          </div>
+        </div>
+      </aside>
+    </transition>
+  </div>
 </template>
 
 <script>
 export default {
-  name: 'navbar'
+  name: 'navbar',
+  data () {
+    return {
+      drawer: false
+    }
+  },
+  methods: {
+    openDrawer () {
+      this.drawer = true
+      this.$nextTick(() => {
+        if (this.$refs.closeBtn) this.$refs.closeBtn.focus()
+      })
+    },
+    closeDrawer () {
+      this.drawer = false
+      if (this.$refs.contactBtn) this.$refs.contactBtn.focus()
+    }
+  }
 }
 </script>
